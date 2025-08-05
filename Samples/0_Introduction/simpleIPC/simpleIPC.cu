@@ -40,7 +40,8 @@ static const char shmName[] = "simpleIPCshm";
 // For NVSWITCH connected peers like DGX-2, simultaneous peers are not limited
 // in the same way.
 #define MAX_DEVICES (32)
-#define DATA_SIZE   (64ULL << 20ULL) // 64MB
+// #define DATA_SIZE   (64ULL << 20ULL) // 64MB
+#define DATA_SIZE 500ULL // 500 bytes
 
 #if defined(__linux__)
 #define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
@@ -169,9 +170,11 @@ static void childProcess(int id)
         }
     }
 
+    cudaDeviceSynchronize();
     // Now wait for my buffer to be ready so I can copy it locally and verify it
     checkCudaErrors(cudaStreamWaitEvent(stream, events[id], 0));
-    checkCudaErrors(cudaMemcpyAsync(&verification_buffer[0], ptrs[id], DATA_SIZE, cudaMemcpyDeviceToHost, stream));
+    // checkCudaErrors(cudaMemcpyAsync(&verification_buffer[0], ptrs[id], DATA_SIZE, cudaMemcpyDeviceToHost, stream));
+    checkCudaErrors(cudaMemcpy(&verification_buffer[0], ptrs[id], DATA_SIZE, cudaMemcpyDeviceToHost));
     // And wait for all the queued up work to complete
     checkCudaErrors(cudaStreamSynchronize(stream));
 
